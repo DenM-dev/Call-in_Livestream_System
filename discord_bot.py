@@ -8,7 +8,7 @@ import time
 import os
 import urllib.request as requests
 
-from .discord_config import *
+from discord_config import *
 
 
 class LogsDatabase:
@@ -296,7 +296,10 @@ class DiscordClient(commands.Bot):
 
             ## Save name
             with open(os.path.join(CALLER_DATA_DIR, "caller_name.txt"), 'w', encoding="utf-8") as txt_file:
-                txt_file.write(member.display_name)
+                name = member.display_name
+                if name.startswith(VERIFICATION_SYMBOL):
+                    name = name[1:]
+                txt_file.write(name)
             
             ## Download pfp
             with open(os.path.join(CALLER_DATA_DIR, "caller_pfp.png"), 'wb') as png_file:
@@ -313,9 +316,14 @@ class DiscordClient(commands.Bot):
             fname_name = os.path.join(CALLER_DATA_DIR, "caller_name.txt")
             fname_pfp = os.path.join(CALLER_DATA_DIR, "caller_pfp.png")
 
-            if os.path.exists(fname_name):
-                os.remove(fname_name)
+            # if os.path.exists(fname_name):
+            #     os.remove(fname_name)
+
+            ## Save blank name
+            with open(os.path.join(CALLER_DATA_DIR, "caller_name.txt"), 'w', encoding="utf-8") as txt_file:
+                txt_file.write("")
             
+            ## Delete pfp
             if os.path.exists(fname_pfp):
                 os.remove(fname_pfp)
             
@@ -570,6 +578,9 @@ class DiscordClient(commands.Bot):
             
             await interaction.response.defer(ephemeral=True, thinking=True)
             
+            msg = self.log.clear_all(mod=interaction.user)
+            await self.bot_logs_channel.send(msg)
+
             for user in self.server.members:
                 if self.moderator_role not in user.roles and self.bot_role not in user.roles:
                     await user.send(END_STREAM_MESSAGE)
@@ -584,9 +595,6 @@ class DiscordClient(commands.Bot):
             for invite in await self.server.invites():
                 await invite.delete()
 
-            msg = self.log.clear_all(mod=interaction.user)
-            await self.bot_logs_channel.send(msg)
-
             # await interaction.response.send_message("Cleared All")
             await interaction.followup.send("Cleared All")
         
@@ -598,6 +606,9 @@ class DiscordClient(commands.Bot):
             
             await interaction.response.defer(ephemeral=True, thinking=True)
             
+            msg = self.log.clear_unqueued(mod=interaction.user)
+            await self.bot_logs_channel.send(msg)
+
             for user in list(self.unqueued_users):
                 await user.send(END_STREAM_MESSAGE)
                 await user.kick()
@@ -605,10 +616,6 @@ class DiscordClient(commands.Bot):
             ## Clear all invites
             for invite in await self.server.invites():
                 await invite.delete()
-
-            msg = self.log.clear_unqueued(mod=interaction.user)
-            await self.bot_logs_channel.send(msg)
-            # await interaction.response.send_message("Removed unqueued users")
 
             await interaction.followup.send("Removed Unqueued")
         

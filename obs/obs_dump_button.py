@@ -15,6 +15,8 @@ holdTime = 1
 delayBeforeShowingCall = 0
 watcherThread = None
 hkey1 = h()
+hkey2 = h()
+hkey3 = h()
 
 
 ########################
@@ -175,7 +177,9 @@ def script_properties():
 def script_load(settings):
     ## Set up hotkeys
     ## https://github.com/obsproject/obs-studio/blob/master/libobs/obs-hotkeys.h
-    hkey1.htk_copy = Hotkey(cb_enable_dump, settings, "Dump Button")
+    hkey1.htk_copy = Hotkey(callback_dump_hold, settings, "Dump Button (Hold)")
+    hkey2.htk_copy = Hotkey(callback_dump_on, settings, "Dump Button (On)")
+    hkey3.htk_copy = Hotkey(callback_dump_off, settings, "Dump Button (Off)")
     print("Script loaded")
 
 
@@ -218,27 +222,48 @@ def script_save(settings):
 ########################
 
 
-def cb_enable_dump(is_button_down):
-    global coverImageSource, holdTime, audioSource1, audioSource2
-    print(f"Triggered. Button down: {is_button_down}")
+def callback_dump_hold(is_button_down):
+    global holdTime
+    print(f"Dump button held: {is_button_down}")
 
     ## When the button is pressed, immediately show the cover image
     if is_button_down:
-        for sceneitem in find_sceneitem_context(coverImageSource):
-            obs.obs_sceneitem_set_visible(sceneitem, True)
-        
-        source1 = obs.obs_get_source_by_name(audioSource1)
-        if source1:
-            obs.obs_source_set_muted(source1, True)
-        
-        source2 = obs.obs_get_source_by_name(audioSource2)
-        if source2:
-            obs.obs_source_set_muted(source2, True)
+        show_cover()
     
     # If the button is released, hide the image after a delay
     else:
         obs.timer_add(remove_cover, int(holdTime * 1000))
 
+
+def callback_dump_on(is_button_down):
+    ## Only trigger when the button is pressed, not released
+    if not is_button_down:
+        return
+    
+    print(f"Dump button on")
+    show_cover()
+
+def callback_dump_off(is_button_down):
+    ## Only trigger when the button is pressed, not released
+    if not is_button_down:
+        return
+    
+    print(f"Dump button off")
+    obs.timer_add(remove_cover, int(holdTime * 1000))
+
+
+def show_cover():
+    global coverImageSource, audioSource1, audioSource2
+    for sceneitem in find_sceneitem_context(coverImageSource):
+        obs.obs_sceneitem_set_visible(sceneitem, True)
+    
+    source1 = obs.obs_get_source_by_name(audioSource1)
+    if source1:
+        obs.obs_source_set_muted(source1, True)
+    
+    source2 = obs.obs_get_source_by_name(audioSource2)
+    if source2:
+        obs.obs_source_set_muted(source2, True)
 
 def remove_cover():
     global coverImageSource
