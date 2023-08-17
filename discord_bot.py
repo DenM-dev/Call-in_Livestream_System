@@ -6,7 +6,7 @@ import random
 import sqlite3
 import time
 import os
-import urllib.request as requests
+import shutil
 
 from discord_config import *
 
@@ -302,9 +302,12 @@ class DiscordClient(commands.Bot):
                 txt_file.write(name)
             
             ## Download pfp
-            with open(os.path.join(CALLER_DATA_DIR, "caller_pfp.png"), 'wb') as png_file:
-                png_bytes = await member.avatar.read()
-                png_file.write(png_bytes)
+            if member.avatar is None:
+                shutil.copy("default_pfp.png", os.path.join(CALLER_DATA_DIR, "caller_pfp.png"))
+            else:
+                with open(os.path.join(CALLER_DATA_DIR, "caller_pfp.png"), 'wb') as png_file:
+                    png_bytes = await member.avatar.read()
+                    png_file.write(png_bytes)
             
             self.log.user_call(member)
 
