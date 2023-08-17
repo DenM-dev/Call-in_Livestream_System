@@ -212,7 +212,9 @@ Call Screen Source: {callScreenSource}""")
 
 def script_save(settings):
     hkey1.htk_copy.save_hotkey()
-                
+    hkey2.htk_copy.save_hotkey()
+    hkey3.htk_copy.save_hotkey()
+
 
 ########################
 ## 
